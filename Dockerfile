@@ -10,6 +10,8 @@ COPY requirements.txt .
 # install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+EXPOSE 80
+
 # command to run on container start
 CMD [ "python3", "./TP1.py" ]
 
