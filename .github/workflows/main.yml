@@ -1,26 +1,40 @@
-name: Docker Image CI
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+on: [push]
+name: Linux_Container_Workflow
 
 jobs:
+    build-and-deploy:
+        runs-on: ubuntu-latest
+        steps:
+        # checkout the repo
+        - name: 'Checkout GitHub Action'
+          uses: actions/checkout@main
+          
+        - name: 'Login via Azure CLI'
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - uses: hadolint/hadolint-action@v2.0.0
+          with:
+            dockerfile: Dockerfile
+        
+        - name: 'Build and push image'
+          uses: azure/docker-login@v1
+          with:
+            login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+            username: ${{ secrets.REGISTRY_USERNAME }}
+            password: ${{ secrets.REGISTRY_PASSWORD }}
+        - run: |
+            docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/20201007:0.0.1
+            docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/20201007:0.0.1
 
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      env : 
-        DOCKER_USER: ${{secrets.DOCKER_USER}}
-        DOCKER_PASSWORD : ${{secrets.DOCKER_PASSWORD}}
-      run: |
-        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
-    - name : Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{secrets.DOCKER_USER}}/efrei-devops-tp2:0.0.1
-    - name : Docker Push
-      run: docker push ${{secrets.DOCKER_USER}}/efrei-devops-tp2:0.0.1
+        - name: 'Deploy to Azure Container Instances'
+          uses: 'azure/aci-deploy@v1'
+          with:
+            resource-group: ${{ secrets.RESOURCE_GROUP }}
+            dns-name-label: devops-20201007
+            image: ${{ secrets.REGISTRY_LOGIN_SERVER }}/20201007:0.0.1 
+            registry-login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+            registry-username: ${{ secrets.REGISTRY_USERNAME }}
+            registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+            name: 20201007
+            location: 'france central'
