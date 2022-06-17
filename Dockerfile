@@ -5,7 +5,6 @@ WORKDIR /Users/fares/Desktop/DevOps/TP1
 
 COPY TP1.py ./
 
-
 # install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
