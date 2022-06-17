@@ -7,7 +7,7 @@ COPY TP1.py ./
 
 
 # install dependencies
-RUN pip3 install --no-cache-dir -Iv requests===2.27.1 Flask===2.1.2
+RUN pip install --no-cache-dir -r requirements.txt
 
 # command to run on container start
 CMD [ "python3", "./TP1.py" ]
