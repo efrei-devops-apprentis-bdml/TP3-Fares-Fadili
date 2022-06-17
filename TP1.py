@@ -1,31 +1,31 @@
+import os
 import requests
 import json
-import os
-from pprint import pprint
-from flask import Flask
+from flask import Flask, request
+from flask_restful import Resource, Api, reqparse
+from marshmallow import Schema, fields
+
+class WeatherQuerySchema(Schema):
+    key1 = fields.Str(required=True)
+    key2 = fields.Str(required=True)
 
 app = Flask(__name__)
+api = Api(app)
+schema = WeatherQuerySchema()
 
+api_key = os.environ['API_KEY']
 
-@app.route('/<lat>/<lon>')
-def weather(lat, lon, api_key):
-    cle_api = os.environ['API_KEY']
-    url = "https://api.openweathermap.org/data/2.5/onecall?lat=%s&lon=%s&appid=%s&units=metric" % (
-        lat, lon, api_key)
+class Weather(Resource):
+    def get(self):
+        errors = schema.validate(request.args)
+        print(request.args)
+        url = "https://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&appid=%s" % (request.args['lat'], request.args['lon'], api_key)
+        response = requests.get(url)
+        data = json.loads(response.text)
+        return data
 
-    weather_data = requests.get(url).json()
+api.add_resource(Weather, '/')
 
-    json_str = json.dumps(weather_data)
-    resp = json.loads(json_str)
-
-    # pprint(resp['current'])
-
-    return resp['current']
-
-
-#latitude = os.environ['LAT']
-#longitude = os.environ['LONG']
-
-#weather(latitude, longitude, cle_api)
-if __name__ == "__main__":
+if __name__ == '__main__':
+    app.run(host="0.0.0.0",debug=True,port=80)
     app.run(host='0.0.0.0', port=80)
